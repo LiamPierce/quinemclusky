@@ -1,0 +1,25 @@
+(decstr)
+Func
+Local dec,ones,i
+
+0→ones
+
+If decstr="" Then
+  "0"→decstr
+EndIf
+
+If getType(decstr)="NUM" Then
+	decstr→dec
+Else
+	expr(decstr)→dec
+EndIf
+
+While int(dec)>0
+    If string(mod(dec,2))="1" Then
+		ones+1→ones
+	EndIf
+    floor(dec/2)→dec
+EndWhile
+
+Return ones
+EndFunc

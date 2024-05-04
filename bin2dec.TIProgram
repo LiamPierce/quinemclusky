@@ -1,0 +1,10 @@
+:bin2dec(binStr)
+:Prgm
+:Local dec, len, i
+:dec := 0
+:len := length(binStr)
+:For i, 1, len
+:    dec := dec + (ord(mid(binStr, len - i + 1, 1)) - ord('0')) * 2^(i - 1)
+:EndFor
+:Return dec
+:EndPrgm

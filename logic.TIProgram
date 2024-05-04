@@ -1,0 +1,653 @@
+()
+Prgm
+Local im,v,d,mi,i,j,k,mo,nu,oo,ii,jj,sf,ch,op,kk,var,nl,tb,dm,m,di,rd,n,bs,f,kp,n2,n3,n5,r,s,next,tick,c,z,e,h,pn,ps,nr,p,ub,pr,prn,modes,result,rsltname,fold,slowmode,showprim
+"logic"→fold
+"truthtab"→tb
+"simpfunc"→rsltname
+"2"→slowmode
+"1"→showprim
+setFold(#fold)→fold
+getMode("Exact/Approx")→modes
+setMode("Exact/Approx","EXACT")
+1→ok
+3→oo
+While ok=1 and oo=3
+1→im
+Dialog
+Title "QMC Logic Function"
+Text "Welcome to Pierce's Logic"
+Text "Fixed up and better than ever."
+Text ""
+DropDown "Input Mode:",{"Logic Function","Minterms","Quit"},im
+Text ""
+EndDlog
+If im=3 Then:0→ok:EndIf
+If ok=0 Then
+ setMode("Exact/Approx",modes)
+ setFold(#fold)
+ DispHome
+ Stop
+EndIf
+1→dm
+Lbl stfu
+If im=1 Then
+4→oo
+1→ok
+While ok=1 and oo=4
+1→oo
+Dialog
+ Title "Pierce QMC"
+ Request "Logic Function",logifunc
+ Request "Save Truthtable To",tb
+ Request "Save Simplified To",rsltname
+ DropDown "Display Mode:",{"True/False","1/0"},dm
+ DropDown "Slow:",{"T","F"},slowmode
+ DropDown "Show Implicant:",{"T","F"},showprim
+ DropDown "Options: ",{"TruthtableSimplify","Truthtable","Help","Change Input Mode"},oo
+EndDlog
+If oo=4 Then:3→oo:ElseIf oo=3 Then:4→oo:EndIf
+If ok=0 Then:1→ok:3→oo:EndIf
+If oo=4 and ok=1 Then
+ Dialog
+ Title "Help"
+ Text "Quick Logic Input Syntax:"
+ Text " Brackets (,)"
+ Text " Not = –,-   And = *"
+ Text " Or  = +     Xor = /"
+ Text "Variable Names: a-z (Overwritten!)"
+ EndDlog
+EndIf
+If ok=0 Then:1→ok:EndIf
+EndWhile
+Else
+Lbl stmi
+2→oo
+1→ok
+While ok=1 and oo=2
+1→oo
+Dialog
+ Title "Pierce QMC"
+ Request "Minterms",minterms
+ Request "Variable Names",varnames
+ Request "Save Simplified To",rsltname
+ DropDown "Slow:",{"T","F"},slowmode
+ DropDown "Show Implicant:",{"T","F"},showprim
+ DropDown "Options:",{"Simplify","Help","Change Input Mode"},oo
+EndDlog
+If ok=0 Then:1→ok:3→oo:EndIf
+If oo=2 and ok=1 Then
+Dialog
+Title "Help"
+Text "Generate A Minimized Logic Function"
+Text "Out Of Minterms (=That Produce 1)"
+Text "Using QuineMcCluskey Algorithm."
+Text "The Terms Must Begin With c(are)"
+Text "Or d(ontCare). Write Them Together."
+Text "Variable Names: a-z (Overwritten!)"
+Text ""
+Text "Example:"
+Text "Minterms: 1,2,3,4,5,6d10"
+Text "Variable Names: abcd"
+EndDlog
+EndIf
+If ok=0 Then:1→ok:EndIf
+EndWhile
+EndIf
+EndWhile
+Try
+ 0→#rsltname
+Else
+ Dialog
+ Title "Error (Read Help)"
+ Text "Incorrect Simplified Savename."
+ EndDlog
+ ClrErr
+ If im=1 Then
+  Goto stfu
+ Else
+  Goto stmi
+ EndIf
+EndTry
+If im=1 Then
+ClrIO
+{" and "," or "," xor "," not "," not "}→op
+"*+/–- ()abcdefghijklmnopqrstuvwxyz"→ch
+1→kk
+{}→var
+Disp "Check Input... 0%"
+Try
+ 0→#tb
+Else
+ Dialog
+ Title "Error (Read Help)"
+ Text "Incorrect Truthtable Savename."
+ EndDlog
+ ClrErr
+ Goto stfu
+EndTry
+""→sf
+6→nl
+For ii,1,dim(logifunc)
+ ii*100/(dim(logifunc))→jj
+ Output 0,90,string(floor(jj))&"%"
+ instring(ch,mid(logifunc,ii,1))→nu
+ If nu=0 Then
+  Dialog
+   Title "Error (Read Help)"
+   Text "Incorrect symbol '"&mid(logifunc,ii,1)&"'."
+  EndDlog
+  Goto stfu
+ ElseIf nu≤5 Then
+  sf&op[nu]→sf
+ ElseIf nu>5 Then
+  sf&mid(logifunc,ii,1)→sf
+  If nl≥9 and nu≥9 Then
+   Dialog
+   Title "Error (Read Help)"
+   Text "Incorrect Variable Name Or"
+   Text "Missing + - * /."
+   EndDlog
+   Goto stfu
+  EndIf
+  If nu≥9 and instring(string(var),mid(logifunc,ii,1))=0 Then
+   mid(logifunc,ii,1)→var[kk]
+   kk+1→kk
+  EndIf
+ EndIf
+ If nu≠6 Then:nu→nl:EndIf
+EndFor
+SortA var
+dim(var)→di
+2^di→rd
+newMat(rd+1,di+1)→#tb
+"f("→jj
+For ii,1,di
+ DelVar #(var[ii])
+ var[ii]→#tb[1,ii]
+ jj&var[ii]→jj
+EndFor
+jj&")"→#tb[1,di+1]
+For ii,1,di
+ false→#tb[2,ii]
+ #tb[2,ii]→#(var[ii])
+EndFor
+Try
+ expr(sf)→#tb[2,di+1]
+Else
+ If errornum=680 Then
+  ClrErr
+  Dialog
+   Title "Error (Read Help)"
+   Text "Missing (."
+  EndDlog
+ ElseIf errornum=690 Then
+  ClrErr
+  Dialog
+   Title "Error (Read Help)"
+   Text "Missing )."
+  EndDlog
+ ElseIf errornum=750 or errornum=440 or errornum=160 Then
+  ClrErr
+  Dialog
+   Title "Error (Read Help)"
+   Text "Missing + – * /."
+  EndDlog
+ ElseIf errornum=910 Then
+  ClrErr
+  Dialog
+   Title "Error (Read Help)"
+   Text "Wrong Syntax."
+  EndDlog
+ Else
+  setMode("Exact/Approx",modes)
+  setFold(#fold)
+  PassErr
+ EndIf
+ Goto stfu
+EndTry
+Disp "Setup Truthtable... 0%"
+For jj,3,rd+1
+ (jj-1)*100/rd→kk
+ Output 12,120,string(floor(kk))&"%"
+ For ii,1,di
+  If remain(jj-2,2^(ii-1))=0 Then
+   not #tb[jj-1,di+1-ii]→#tb[jj,di+1-ii]
+  Else
+   #tb[jj-1,di+1-ii]→#tb[jj,di+1-ii]
+  EndIf
+ EndFor
+ For kk,1,di
+  #tb[jj,kk]→#(var[kk])
+ EndFor
+ expr(sf)→#tb[jj,di+1]
+EndFor
+Disp "Saved Table '"&tb&"'."
+For ii,1,di
+ DelVar #(var[ii])
+EndFor
+If oo=1 Then
+ Disp "Extract Minterms... 0%"
+ 1→kk
+ For ii,2,rd+1
+  Output 36,120,string(floor(100*(ii-1)/rd))&"%"
+  If #tb[ii,di+1]=true Then
+   "c"→mi[kk]
+   For jj,1,di
+    If #tb[ii,jj]=true Then
+     mi[kk]&"1"→mi[kk]
+    Else
+     mi[kk]&"0"→mi[kk]
+    EndIf
+   EndFor
+  kk+1→kk
+  EndIf
+ EndFor
+EndIf
+If dm=2 Then
+ For ii,2,rd+1
+  For jj,1,di+1
+   If #tb[ii,jj]=true Then
+    1→#tb[ii,jj]
+   Else
+    0→#tb[ii,jj]
+   EndIf
+  EndFor
+ EndFor
+EndIf
+If oo=1 Then
+ If kk=1 Then
+  0→#rsltname
+  Disp "Already Simplest Result 0."
+  Disp "Saved Result '"&rsltname&"'."
+ ElseIf kk=rd+1 Then
+  1→#rsltname
+  Disp "Already Simplest Result 1."
+  Disp "Saved Result '"&rsltname&"'."
+ Else
+  Goto qmc
+ EndIf
+EndIf
+setMode("Exact/Approx",modes)
+setFold(#fold)
+DispHome
+Stop
+Else
+dim(varnames)→d
+dim(minterms)→ii
+If varnames="" or minterms="" Then
+ Dialog
+  Title "Error (Read Help)"
+  Text "Incorrect Input."
+ EndDlog
+ Goto stmi
+EndIf
+newList(d)→var
+For i,1,d
+ mid(varnames,i,1)→var[i]
+ If ord(var[i])<97 or ord(var[i])>122 Then
+  Dialog
+   Title "Error (Read Help)"
+   Text "Incorrect Variable Name(s)."
+  EndDlog
+  Goto stmi
+ EndIf
+EndFor
+
+newList(0)→mi
+newList(0)→mi1
+1→i
+While i≤dim(minterms)
+  If mid(minterms,i,1)="c" or mid(minterms,i,1)="d" or mid(minterms,i,1)="," or i=1 Then
+ If i=1 and mid(minterms,i,1)≠"c" and mid(minterms,i,1)≠"d" Then
+   "c"→prefix
+    0→i
+ Else
+   If prefix="," Then
+  "c"→prefix
+   EndIf
+ EndIf
+
+    i+1→i
+    i→numstart
+    While i≤dim(minterms) and instring("0123456789",mid(minterms,i,1))≠0
+      i+1→i
+    EndWhile
+    mid(minterms,numstart,i-numstart)→current
+    dec2bin(current,d)→current
+ augment(mi1,{current})→mi1
+    prefix&current→current
+    augment(mi,{current})→mi
+  Else
+    i+1→i
+  EndIf
+EndWhile
+
+EndIf
+Lbl qmc
+
+ClrIO
+uniqlist(mi)→mi
+uniqlist(mi1)→mi1
+maprws(mi1,"bin2dec")→lcldisp
+maprws(lcldisp,"cntones")→lclsrt
+
+For i,1,dim(lclsrt)
+ lclsrt[i]*1000+lcldisp[i]→lclsrt[i]
+EndFor
+
+SortA lclsrt,lcldisp,mi1
+For i,1,dim(lclsrt)
+ Disp string(lcldisp[i])&": "&mi1[i]
+ If slowmode=1 Then
+  Pause 
+  ClrIO
+ EndIf
+
+ If slowmode=1 Then
+  Pause 
+ EndIf
+EndFor
+
+Define inlist(l,e)=Func
+Local i
+For i,1,dim(l)
+ If e=l[i] Then
+  Return true
+ EndIf
+EndFor
+ Return false
+EndFunc
+Define mcol(minterms,m,i)=Func
+Return (mRow(minterms,m,i))
+EndFunc
+
+DelVar kl,kp
+1→i
+While getType(#("mi"&string(i)))≠"NONE"
+ DelVar #("mi"&string(i)),#("nr"&string(i)),#("ng"&string(i))
+ i+1→i
+EndWhile
+1→v
+newList(dim(mi))→ng1
+newList(dim(mi))→mi1
+newList(dim(mi))→c
+newList(1)→p
+newList(1)→pnt
+newList(1)→prnt
+dim(var)→d
+0→f
+For i,0,d-1
+  2*10^i+f→f
+EndFor
+Disp "QMC-Simplify..."
+For i,1,dim(mi)
+ left(mi[i],1)→c[i]
+ expr(right(mi[i],d))+f→mi1[i]
+ string(bin2dec(right(mi[i],d)))→ng1[i]
+ string(i)→nr1[i]
+EndFor
+1→next
+While next=1
+0→next
+"mi"&string(v)→m
+"nr"&string(v)→nr
+"ng"&string(v)→ng
+string(v+1)→jj
+newList(dim(#m))→tick
+Disp "Initialize "&m&"..."
+ClrIO
+For i,1,dim(#m)
+ 0→kl[i]
+ For j,1,d
+  If d-dim(string(#m[i]))<j Then
+   expr(mid(string(#m[i]),j-d+dim(string(#m[i])),1))+kl[i]→kl[i]
+  EndIf
+ EndFor
+EndFor
+SortA kl,#nr,#m,#ng
+If dim(#m)>1 Then
+ For i,2,dim(#m)
+  If #m[i]=#m[i-1] Then
+  Dialog
+   Title "Error (Read Help)"
+   Text "Two Similar Minterms."
+  EndDlog
+  Goto stmi
+  EndIf
+ EndFor
+EndIf
+1→j
+1→kp[1]
+For i,2,dim(kl)
+ If kl[i]>kl[i-1] Then
+  1→k
+  While k<kl[i]-kl[i-1]
+   j+1→j
+   kp[j-1]→kp[j]
+   k+1→k
+  EndWhile
+  j+1→j
+  i→kp[j]
+ EndIf
+EndFor
+dim(#m)+1→kp[j+1]
+1→r
+newList(0)→agord
+newList(0)→agrmt
+newList(0)→agrmtl
+For k,1,max(kl)-min(kl)
+ kp[k]→i
+ While i<kp[k+1]
+  kp[k+1]→j
+  string(#m[i])→ii
+  While j<kp[k+2]
+   string(#m[i]+#m[j])→bs
+   1→n
+   0→f
+   While n≤d
+    instring(bs,"5",n)→n5
+    instring(bs,"2",n)→n2
+    instring(bs,"3",n)→n3
+    If n5=0 or n2≠0 or n3≠0 or f>1 Then
+     Exit
+    Else
+     f+1→f
+     1+n5→n
+    EndIf
+   EndWhile
+  If f=1 and dim(ii)=dim(string(#m[j])) Then
+  1→next
+  augment(agord,{sum(maprws(expr("{"&#ng[i]&"}"),"cntones"))*10000+min(expr("{"&#ng[i]&"}"))*1000+min(expr("{"&#ng[j]&"}"))})→agord
+  augment(agrmt,{#ng[i]&","&#ng[j]})→agrmt
+  #m[i]-expr(mid(ii,n-1,1))*10^(dim(ii)-n+1)→e
+  augment(agrmtl,{ppqm(e,d)})→agrmtl
+  If r=1 Then
+   e→#("mi"&jj)[r]
+  #nr[i]&","&#nr[j]→#("nr"&jj)[r]
+  #ng[i]&","&#ng[j]→#("ng"&jj)[r]
+   r+1→r
+  EndIf
+  If r>1 and not inlist(#("mi"&jj),e) Then
+   e→#("mi"&jj)[r]
+  #nr[i]&","&#nr[j]→#("nr"&jj)[r]
+  #ng[i]&","&#ng[j]→#("ng"&jj)[r]
+   r+1→r
+  EndIf
+   1→tick[i]
+   1→tick[j]
+  EndIf
+  j+1→j
+  EndWhile
+ i+1→i
+ EndWhile
+EndFor
+SortA agord,agrmt,agrmtl
+If slowmode=1 Then
+  Pause 
+ EndIf
+
+For i,1,dim(agrmt)
+ Disp agrmt[i]
+ Disp agrmtl[i]
+ If slowmode=1 Then
+  Pause 
+  ClrIO
+ EndIf
+
+If slowmode=1 Then
+  Pause 
+ EndIf
+EndFor
+For i,1,dim(tick)
+ If tick[i]=0 Then
+  If p[1]=0 Then:1→f
+  Else:dim(p)+1→f:EndIf
+  #m[i]→p[f]
+  "{"&#nr[i]&"}"→prn[f]
+  "{"&#ng[i]&"}"→prnt[f]
+  EndIf
+EndFor
+DelVar kl,kp
+v+1→v
+EndWhile
+Disp "Setup Primimplicants..."
+newMat(dim(prn),dim(mi))→ub
+For i,1,dim(prn)
+ For j,1,dim(expr(prn[i]))
+  1→ub[i,expr(prn[i])[j]]
+ EndFor
+EndFor
+For i,1,dim(mi)
+ sum(ub)→h
+EndFor
+1→k
+For i,1,dim(prn)
+ dim(expr(prn[i]))→ps[i]
+ i→pn[i]
+ 
+EndFor
+SortA ps,pn,prnt
+Disp "Check Care/DontCare..."
+For i,1,dim(c)
+ If c[i]="d" Then
+  mcol(0,ub,i)→ub
+ EndIf
+EndFor
+For i,1,colDim(ub)
+ sum(ub)→h
+EndFor
+Disp "Find MainPrimimplicants..."
+While sum(expr("{"&mid(string(h),3,dim(h)[2]*2-1)&"}"))≠0
+ While inlist(expr("{"&mid(string(h),3,dim(h)[2]*2-1)&"}"),1)
+ Disp "Primimplicant "&string(k)&" Found..."
+ 1→s
+ While h[1,s]≠1
+  s+1→s
+ EndWhile
+ 1→z
+ While ub[z,s]=0
+  z+1→z
+ EndWhile
+ p[z]→pr[k]
+ Disp prnt[z]
+ If showprim=1 Then
+  ""→v
+  ""→kloc
+  ""→result
+  
+  For j,1,dim(string(pr[k]))
+    dim(var)-dim(string(pr[k]))+j→r
+    If mid(string(pr[k]),j,1)="2" Then
+     v&"_"→v
+     kloc&var[r]→kloc
+     result&"–"&var[r]→result
+    ElseIf mid(string(pr[k]),j,1)="3" Then
+     v&" "→v
+     kloc&var[r]→kloc
+     result&var[r]→result
+    EndIf
+  EndFor
+  If i<dim(pr) Then
+    v&" "→v
+    kloc&"+"→kloc
+    result&"+"→result
+  EndIf
+  If kloc="" Then
+   1→kloc
+   1→result
+  EndIf
+  Disp result
+ EndIf
+
+ If slowmode=1 Then
+  Pause 
+ EndIf
+ k+1→k
+ For i,1,dim(expr(prn[z]))
+  expr(prn[z])[i]→j
+  mcol(0,ub,j)→ub
+ EndFor
+ For i,1,colDim(ub)
+  sum(ub)→h
+ EndFor
+EndWhile
+If sum(expr("{"&mid(string(h),3,dim(h)[2]*2-1)&"}"))=0 Then
+ Disp "Solution Found."
+Else
+ Disp "Find Best Primimplicant..."
+ 1→i
+ While not inlist(expr("{"&mid(string(h),3,dim(h)[2]*2-1)&"}"),1)
+ mRow(0,ub,pn[i])→ub
+ For j,1,colDim(ub)
+  sum(ub)→h
+ EndFor
+ i+1→i
+ EndWhile
+EndIf
+EndWhile
+DelVar mcol,inlist
+1→i
+While getType(#("mi"&string(i)))≠"NONE"
+ DelVar #("mi"&string(i)),#("nr"&string(i)),#("ng"&string(i))
+ i+1→i
+EndWhile
+Disp "Compute Pretty Print..."
+""→v
+""→k
+""→result
+For i,1,dim(pr)
+ For j,1,dim(string(pr[i]))
+  dim(var)-dim(string(pr[i]))+j→r
+  If mid(string(pr[i]),j,1)="2" Then
+   v&"_"→v
+   k&var[r]→k
+   result&"–"&var[r]→result
+  ElseIf mid(string(pr[i]),j,1)="3" Then
+   v&" "→v
+   k&var[r]→k
+   result&var[r]→result
+  EndIf
+ EndFor
+ If i<dim(pr) Then
+  v&" "→v
+  k&"+"→k
+  result&"+"→result
+ EndIf
+EndFor
+If k="" Then
+ 1→k
+ 1→result
+EndIf
+result→#rsltname
+Disp "Saved Result '"&rsltname&"'."
+ClrIO
+Disp "QMC-Simplify Result:"
+Output 8,0,v
+Output 16,0,k
+Disp "Scroll Result (End=Enter):"
+
+Pause result
+setMode("Exact/Approx",modes)
+setFold(#fold)
+DispHome
+EndPrgm

@@ -1,0 +1,21 @@
+dec2bin(decStr, reqLen)
+Func
+Local dec, binStr, padLen, i, zeroPad
+expr(decStr) → dec
+"" → binStr
+While dec > 0
+    string(mod(dec, 2)) & binStr → binStr
+    floor(dec / 2) → dec
+EndWhile
+If binStr = "" Then
+    "0" → binStr
+EndIf
+If reqLen > dim(binStr) Then
+    "" → zeroPad
+    For i, 1, reqLen - dim(binStr)
+        "0" & zeroPad → zeroPad
+    EndFor
+    zeroPad & binStr → binStr
+EndIf
+Return binStr
+EndFunc

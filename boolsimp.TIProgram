@@ -1,0 +1,107 @@
+()
+Prgm
+Local in,i,lchr,lord,tempstr,lwc,lwn,lwp,tlwc,tlwn,sop,intmd
+
+Dialog
+Title "Pierce Logic Solver"
+Request "Enter Bool Func:",lblsimp,2
+DropDown "Mode:",{"Simplify","Factor"},sop
+DropDown "Show Int:",{"T","F"},intmd
+EndDlog
+
+lblsimp→in
+
+
+""→tempstr
+1→i
+0→lwc
+0→lwn
+0→lwp
+While i≤dim(in)
+ mid(in,i,1)→lchr
+ ord(lchr)→lord
+ "Disp lchr & ": " & string(lord)"
+ 
+ If lord≥65 and lord≤90 or lord≥97 and lord≤122 or (lord=173 or lord=45) and lwc=1 Then
+  If getType(#(lchr))≠"NONE" Then
+   DelVar string(#(lchr))
+  EndIf
+  
+  If lwc=1 or lwn=1 Then
+   tempstr&" and "→tempstr
+  EndIf
+  
+  If lord=173 or lord=45 Then
+   0→lwc
+   0→lwn
+   tempstr&"not "→tempstr
+  Else
+   1→lwc
+   If i>1 and mid(in,i-1,1)=")" Then
+    tempstr&" and "→tempstr
+   EndIf
+   tempstr&lchr→tempstr
+  EndIf
+  
+ Else
+  lwc→tlwc
+  lwn→tlwn
+  0→lwc
+  0→lwn
+  
+  If lchr="+" Then
+         tempstr&" or "→tempstr
+     ElseIf lord=173 or lord=45 Then
+   tempstr&" not "→tempstr
+   1 and (tlwc or tlwn)→lwn
+  Else
+   If lchr=")" and mid(in,i+1,1)="(" Then
+    tempstr&mid(in,i,1)→tempstr
+    tempstr&" and "→tempstr
+   ElseIf lchr="(" and (tlwc or tlwn)=1 Then
+    tempstr&" and "→tempstr
+    tempstr&lchr→tempstr
+   Else
+    tempstr&lchr→tempstr
+   EndIf
+   
+  EndIf
+ EndIf
+ 
+ i+1→i
+EndWhile
+
+
+If intmd=1 Then
+Pause tempstr
+EndIf
+
+If sop=1 Then
+ expr(tempstr)→lbsr
+ElseIf sop=2 Then
+ expr("factor("&tempstr&")")→lbsr
+EndIf
+
+string(lbsr)→in
+
+""→tempstr
+1→i
+While i≤dim(in)
+ If mid(in,i,5)=" and " Then
+  i+4→i
+ ElseIf mid(in,i,4)=" or " Then
+  i+3→i
+  tempstr&"+"→tempstr
+ ElseIf mid(in,i,4)="not " Then
+  i+3→i
+  tempstr&"~"→tempstr
+ Else
+  tempstr&mid(in,i,1)→tempstr
+ EndIf
+  
+ i+1→i
+EndWhile
+
+Pause tempstr
+
+EndPrgm

@@ -1,0 +1,24 @@
+(data,funcname)
+Func
+Local rows,cols,i,j,temp
+
+If getType(data)="LIST" Then
+    dim(data)→rows
+    newList(rows)→temp
+    For i,1,rows
+        expr(funcname&"("&string(data[i])&")")→temp[i]
+    EndFor
+
+ElseIf getType(data)="MAT" Then
+    dim(data)→rows
+    dim(data)→cols
+    newMat(rows,cols)→temp
+    For i,1,rows
+        For j,1,cols
+            expr(funcname&"("&string(data[i,j])&")")→temp[i,j]
+        EndFor
+    EndFor
+EndIf
+
+Return temp
+EndFunc

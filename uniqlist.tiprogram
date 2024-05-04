@@ -1,0 +1,23 @@
+(in)
+Func
+Local i, j, unique, found
+
+newList(0)→unique
+
+For i,1,dim(in)
+    0→found
+
+    For j,1,dim(unique)
+        If in[i]=unique[j] Then
+            1→found
+            Break
+        EndIf
+    EndFor
+
+    If found=0 Then
+        augment(unique,{in[i]})→unique
+    EndIf
+EndFor
+
+Return unique
+EndFunc
